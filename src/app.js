@@ -1,67 +1,41 @@
-const express = require("express");
 //created a web server
+const express = require("express");
+const connectDB = require('./config/database')
+const User = require('./models/user');
+//connecting to the cluster
+require('./config/database');
+ 
 const app = express();
-const {adminAuth, userAuth} = require("./middlewares/auth.js");
 
-app.use('/admin',adminAuth);
+app.use(express.json());
 
-app.post('/user/login',(req,res)=>{
-    res.send("User logged in");
-});
-app.get('/admin',(req,res)=>{
-    res.send("Admin recognized");
-})
-app.get('/admin/getAllData',(req,res)=>{
-    
-    res.send("User Data Sent");
-})
-
-app.get('/user/:name/:userId/:password',(req,res)=>{
-    console.log(req.params);
-    res.send({firstname: 'John', lastname: 'Doe', email: 'john@doe.com'});
-})
-app.get('/user',userAuth,(req,res)=>{
-    
-    res.send("User created")
-})
-
-app.delete('/user',(req,res)=>{
-    res.send("User deleted");
-})
-
-app.use('/start',(req, res)=>{
-    res.send("Hello from the start route");
-})
-app.use('/test',(req,res)=>{
-    res.send("hello from the test");
-})
-app.use('/go',(req, res)=>{
-    res.send("Hello from the go route");
-})
-
-app.get('/getUserData',(req,res)=>{
+//handler function as async
+app.post("/signup",async(req,res)=>{
+    // const userObj = {
+    //     firstName:"Naman",
+    //     lastName:"Nayal",
+    //     emailId:"naman@gmail.com",
+    //     password:"123456",
+    // }
+    //creating a new instance of the User Model
+    // const user = new User(userObj);
+    const user = new User(req.body);
+    await user.save();
     try{
-        throw new Error ("Error");
-        res.send("Hello from the getUserData route");
+    res.send("User created successfully");
     }catch(err){
-        res.status(500).send("something went wrong!!");
+    res.status(400).send("Error creating user");
     }
 })
-app.get("/getUserData",(req,res)=>{
-    throw new Error("dasx");
-    res.send("user data");
-})
-app.use("/",(err,req,res,next)=>{
-    if(err){
-        res.status(500).send("something went wrong");
-    }
-})
-//to handle the incoming request
-// // //this function is known as request handler
-// app.use('/',(req,res)=>{
-//     res.send("hello from the server");
-// })
-//listen on port 3000
-app.listen(3000,()=>{
+
+connectDB().then(()=>{
+    console.log("Connected to the database");
+    //listen on port 3000
+    app.listen(3000,()=>{
     console.log("Server listening on port 3000");
 });
+}).catch((err)=>{
+    console.log("Error connecting to the database");
+})
+
+
