@@ -20,7 +20,7 @@ const useSchema = new mongoose.Schema({
             if(!validator.isEmail(value)){
                 throw new Error("Invalid Email "+value);
         }
-    },
+    }},
     password:{
         type:String,
         required:true,
@@ -28,7 +28,7 @@ const useSchema = new mongoose.Schema({
             if(!validator.isStrongPassword(value)){
                 throw new Error("Use Strong Password "+value);
         }
-    },
+    }},
     age:{
         type:Number,
         min:9,
@@ -50,7 +50,7 @@ const useSchema = new mongoose.Schema({
             if(!validator.isURL(value)){
                 throw new Error("Invalid URL "+value);
         }
-    },
+    }},
     about:{
         type:String,
         default:"Hey there! I am using DevTinder",
@@ -58,9 +58,11 @@ const useSchema = new mongoose.Schema({
     skills:{
         type:[String],
     }
-},{
+},
+{
     timestamps:true,
-});
+}
+);
 
 
-module.exports = mongoose.model("User",useSchema);;
+module.exports = mongoose.model("User",useSchema);

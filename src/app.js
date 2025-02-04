@@ -2,6 +2,8 @@
 const express = require("express");
 const connectDB = require('./config/database')
 const User = require('./models/user');
+const {validateSignUpData} = require('./utils/validation');
+const bcrypt = require("bcrypt");
 //connecting to the cluster
 require('./config/database');
  
@@ -20,14 +22,51 @@ app.post("/signup",async(req,res)=>{
     // }
     //creating a new instance of the User Model
     // const user = new User(userObj);
-    const user = new User(req.body);
-    await user.save();
+
+
+    
     try{
+        //validation of data
+        validateSignUpData(req);
+        //encrypt the password
+        const {password, firstName, lastName, emailId} = req.body;
+        const passwordHash = await bcrypt.has(password, 10);
+        const user = new User({
+            firstName,
+            lastName,
+            emailId,
+            password:passwordHash,
+        });    
+        await user.save();
     res.send("User created successfully");
     }catch(err){
-    res.status(400).send("Error creating user");
+    res.status(400).send("ERROR: "+err.message);
     }
 })
+
+app.post('/signin', async(req,res)=>{
+    try{
+        const {emailId, password} = req.body;
+        //get the response from body
+        const user = await user.findOne({emailId: emailId});
+        //check if the email id is present in the db
+        if(!user){
+            throw new Error("Invalid Credentials");
+        }
+        const isPasswordValid = await bycryot.compare(password, user.password);
+        //check if the password is correct or not 
+        if(!isPasswordValid){
+            throw new Error("Invalid Credentials");
+        }else{
+            res.send("User logged in successfully");
+        }
+
+    }catch(err){
+        res.status(400).send("ERROR: "+err.message);
+
+    }
+})
+
 //to get user from the db
 app.get("/user",async(req, res) => {
     const userEmail = req.body.emailId;
@@ -69,7 +108,9 @@ app.delete('/user', async(req,res)=>{
 //to update user from the database
 app.patch('/user/:userId', async(req,res)=>{
     const userId = req.params?.userId;
+  
     const data = req.body;
+
    
     try{
         const ALLOWED_UPDATE = ["photoUrl","about","gender","skills"];
