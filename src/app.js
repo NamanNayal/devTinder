@@ -4,13 +4,16 @@ const connectDB = require('./config/database')
 const User = require('./models/user');
 const {validateSignUpData} = require('./utils/validation');
 const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const {userAuth} = require('./middlewares/auth');
 //connecting to the cluster
 require('./config/database');
  
 const app = express();
 
 app.use(express.json());
-
+app.use(cookieParser());
 //handler function as async
 //to create a user in the db
 app.post("/signup",async(req,res)=>{
@@ -30,7 +33,7 @@ app.post("/signup",async(req,res)=>{
         validateSignUpData(req);
         //encrypt the password
         const {password, firstName, lastName, emailId} = req.body;
-        const passwordHash = await bcrypt.has(password, 10);
+        const passwordHash = await bcrypt.hash(password, 10);
         const user = new User({
             firstName,
             lastName,
@@ -44,21 +47,30 @@ app.post("/signup",async(req,res)=>{
     }
 })
 
-app.post('/signin', async(req,res)=>{
+app.post('/signin', async(req,res)=>{ 
     try{
         const {emailId, password} = req.body;
         //get the response from body
-        const user = await user.findOne({emailId: emailId});
+        const user = await User.findOne({emailId: emailId});
         //check if the email id is present in the db
         if(!user){
             throw new Error("Invalid Credentials");
         }
-        const isPasswordValid = await bycryot.compare(password, user.password);
+        const isPasswordValid = await user.validatePassword(password);
+
         //check if the password is correct or not 
-        if(!isPasswordValid){
-            throw new Error("Invalid Credentials");
-        }else{
+        if(isPasswordValid){
+            
+            //importing the getJWT method from user.js model
+            const token = await user.getJWT();
+
+            //add the token to cookie and send the response back to the user
+            res.cookie("token", token);
+            //res.cookie(name,value) by express
             res.send("User logged in successfully");
+
+        }else{
+            throw new Error("Invalid Credentials");
         }
 
     }catch(err){
@@ -67,71 +79,25 @@ app.post('/signin', async(req,res)=>{
     }
 })
 
-//to get user from the db
-app.get("/user",async(req, res) => {
-    const userEmail = req.body.emailId;
-    if(!userEmail){
-        return res.status(400).send("Email is required");
-    }
+app.get('/profile',userAuth, async(req,res)=>{
     try{
-        const user = await User.findOne({emailId: userEmail});
-        if(!user){
-            return res.status(404).send("User not found");
-        }else{
-            res.send(user);
-        }
-       
-    }catch(e){
+        // user passed from auth middleware
+        const user = req.user;
+        res.send(user);
+    }catch(err){
         res.status(400).send("Error fetching user");
     }
 })
-//Feed API  GET feed  get all the users from the db
-app.get('/feed',async (req,res)=>{
-    try{
-        const users = await User.find({});
-        res.send(users);
-    }catch(err){
-        res.status(500).send("Server Error");
-    }
 
-})
-//to delete user from the database 
-app.delete('/user', async(req,res)=>{
-    const userId = req.body.userId;
+app.post('/sendConnectionRequest', userAuth, async(req,res)=>{
     try{
-        const user = await User.findByIdAndDelete(userId);
-        res.send("User deleted successfully");
+        const user = req.user;
+        res.send(user.firstName+" Sent a connection request")
     }catch(err){
-        res.status(500).send("Error deleting user");
+        res.status(400).send("Error sending connection request");
     }
 })
-//to update user from the database
-app.patch('/user/:userId', async(req,res)=>{
-    const userId = req.params?.userId;
-  
-    const data = req.body;
 
-   
-    try{
-        const ALLOWED_UPDATE = ["photoUrl","about","gender","skills"];
-        const isUpdateAlllowed = Object.keys(data).every((k)=> ALLOWED_UPDATE.includes(k));
-        if(!isUpdateAlllowed){
-            throw new Error("Invalid updates");
-        }
-
-        if(data?.skills.length > 10){
-            throw new Error("Skills limit exceeded");
-        }
-
-        await User.findByIdAndUpdate({_id: userId},data,{
-            returnDocument:"after",
-            runValidators:true,
-        });
-        res.send("User updated successfully");
-    }catch(err){
-        res.status(500).send("Error updating user");
-    }
-})
 
 connectDB().then(()=>{
     console.log("Connected to the database");

@@ -1,7 +1,9 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
-const useSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
     firstName:{
         type:String,
         required:true,
@@ -65,4 +67,23 @@ const useSchema = new mongoose.Schema({
 );
 
 
-module.exports = mongoose.model("User",useSchema);
+//userSchema method for generating JWT token
+userSchema.methods.getJWT = async function(){
+    //this method will break if we use an arow function
+    //whenever create an instance of the User model, we can call this function
+    const user = this;
+    //create a JWT token
+    const token = await jwt.sign({_id: user._id},"12345", {expiresIn:"7d"});
+    return token;
+
+}
+userSchema.methods.validatePassword = async function(passwordInputByUser){
+    const user  = this;
+    const passwordHash = user.password;
+    const isPasswordValid = await bcrypt.compare(passwordInputByUser, passwordHash);
+
+    return isPasswordValid;
+}
+
+
+module.exports = mongoose.model("User",userSchema);
