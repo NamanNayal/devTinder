@@ -7,18 +7,9 @@ const jwt = require("jsonwebtoken");
 const authRouter = express.Router();
 
 authRouter.post("/signup",async(req,res)=>{
-    // const userObj = {
-    //     firstName:"Naman",
-    //     lastName:"Nayal",
-    //     emailId:"naman@gmail.com",
-    //     password:"123456",
-    // }
-    //creating a new instance of the User Model
-    // const user = new User(userObj);
+    
     try{
-        //validation of data
         validateSignUpData(req);
-        //encrypt the password
         const {password, firstName, lastName, emailId} = req.body;
         const passwordHash = await bcrypt.hash(password, 10);
         const user = new User({
@@ -58,7 +49,7 @@ authRouter.post('/signin', async(req,res)=>{
     }
 })
 
-authRouter.pos('/signout', async(req,res)=>{
+authRouter.post('/signout', async(req,res)=>{
     req.cookie("token", null, {
         expires: new Date(Date.now()),
     });

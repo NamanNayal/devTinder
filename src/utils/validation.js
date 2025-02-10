@@ -15,6 +15,7 @@ const validateSignUpData = (req) =>{
     }
 
 };
+const bcrypt = require("bcrypt");
 
 const validateEditProfileData = (req)=>{
     const allowedEditFields = ["firstName", "lastName", "emailId", "about","photoUrl","gender","age","skils"];
@@ -24,7 +25,12 @@ const validateEditProfileData = (req)=>{
     return isEditAllowed;
 }
 
+const validatePassword = async(enteredPassword, hashedPassword) => {
+    return await bcrypt.compare(enteredPassword,hashedPassword);
+}
+
 module.exports ={
     validateSignUpData,
     validateEditProfileData,
+    validatePassword,
 }
