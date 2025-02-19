@@ -52,7 +52,7 @@ requestRouter.post('/request/send/:status/:toUserId', userAuth, async(req,res)=>
     
 })
 
-requestRouter.post('/request/review/:status/:requestId', userAuth, async(res,req){
+requestRouter.post('/request/review/:status/:requestId', userAuth, async(res,req)=>{
     const loggedInUser = req.user;
     try{
         const loggedInUser =  req.user;
@@ -84,6 +84,8 @@ requestRouter.post('/request/review/:status/:requestId', userAuth, async(res,req
     }catch(err){
         res.status(400).send("ERROR: " + err.message);
     }
+
 })
+    
 
 module.exports = requestRouter;
